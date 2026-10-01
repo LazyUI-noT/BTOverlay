@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +14,7 @@ public partial class MainWindow : Window
     OverlayWindow _overlay = null!;
     Hotkeys _hotkeys = null!;
     Session? _session;
+    long _lastItemChangeTicks;
     public MainWindow()
     {
         InitializeComponent();
@@ -22,6 +24,8 @@ public partial class MainWindow : Window
         MaxBox.Text = _settings.MaxItems.ToString(); ImageBox.Text = _settings.ItemImage;
         XBox.Text = _settings.OverlayX.ToString(); YBox.Text = _settings.OverlayY.ToString();
         ScaleBox.Text = _settings.OverlayScale.ToString("0.00"); OpacityBox.Text = _settings.OverlayOpacity.ToString("0.00");
+        SyncSizeBoxes();
+        CombineMySizeBox.IsChecked = _settings.CombineMySize;
         ShowBox.IsChecked = _settings.ShowOverlay; CaptureBox.IsChecked = _settings.HideFromCapture;
         Party1ColorBox.Text = _settings.Party1Color; Party2ColorBox.Text = _settings.Party2Color;
         CurrentOutlineBox.Text = _settings.CurrentOutlineColor; MyOutlineBox.Text = _settings.MyOutlineColor;
@@ -30,8 +34,9 @@ public partial class MainWindow : Window
         GoldBox.IsChecked = _settings.GoldOnMyTurn; FlashBox.IsChecked = _settings.FlashGold;
         SpendKeyBox.Text = _settings.SpendKey; AddKeyBox.Text = _settings.AddKey;
         ResetCountsKeyBox.Text = _settings.ResetCountsKey; ResetTurnKeyBox.Text = _settings.ResetTurnKey; ToggleKeyBox.Text = _settings.ToggleKey;
+        EditKeyBox.Text = _settings.EditKey;
         _board.Changed += RenderPlayers;
-        Loaded += (_, _) => { _overlay = new OverlayWindow(_board, _settings); _overlay.Show(); _hotkeys = new Hotkeys(); ApplyHotkeys(); RenderPlayers(); };
+        Loaded += (_, _) => { _overlay = new OverlayWindow(_board, _settings); _overlay.EditSettingsChanged += SyncSizeBoxes; _overlay.Show(); _hotkeys = new Hotkeys(); ApplyHotkeys(); RenderPlayers(); };
         Closing += (_, _) => { _settings.Save(); _hotkeys?.Dispose(); _ = _session?.DisposeAsync(); _overlay?.Close(); };
     }
     void Status(string text) { StatusText.Text = text; }
@@ -125,6 +130,14 @@ public partial class MainWindow : Window
     async Task ChangeCount(int delta)
     {
         var value = Math.Clamp(_board.Counts[_board.MySlot] + delta, 0, 10);
+        if (value == _board.Counts[_board.MySlot]) return;
+        var now = Stopwatch.GetTimestamp();
+        if (_lastItemChangeTicks != 0)
+        {
+            var wait = TimeSpan.FromSeconds(25) - Stopwatch.GetElapsedTime(_lastItemChangeTicks, now);
+            if (wait > TimeSpan.Zero) { Status($"아이템 변경은 {Math.Ceiling(wait.TotalSeconds)}초 후 다시 사용할 수 있습니다."); return; }
+        }
+        _lastItemChangeTicks = now;
         if (_session is null || !_session.Connected)
         {
             var offTurn = value < _board.Counts[_board.MySlot] && _board.MySlot != _board.Turn;
@@ -151,6 +164,31 @@ public partial class MainWindow : Window
         var picker = new OpenFileDialog { Filter = "이미지|*.png;*.jpg;*.jpeg;*.bmp;*.webp" };
         if (picker.ShowDialog(this) == true) ImageBox.Text = picker.FileName;
     }
+    void PickColorClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string targetName }) return;
+        var target = targetName switch
+        {
+            "Party1" => Party1ColorBox,
+            "Party2" => Party2ColorBox,
+            "Current" => CurrentOutlineBox,
+            "My" => MyOutlineBox,
+            _ => null
+        };
+        if (target is null) return;
+        var picker = new ColorPaletteWindow(target.Text) { Owner = this };
+        if (picker.ShowDialog() != true) return;
+        target.Text = picker.SelectedHex;
+        switch (targetName)
+        {
+            case "Party1": _settings.Party1Color = target.Text; break;
+            case "Party2": _settings.Party2Color = target.Text; break;
+            case "Current": _settings.CurrentOutlineColor = target.Text; break;
+            case "My": _settings.MyOutlineColor = target.Text; break;
+        }
+        _settings.Save(); _overlay.ApplyStyle();
+        Status("색상을 적용했습니다.");
+    }
     void ApplyClick(object sender, RoutedEventArgs e)
     {
         try
@@ -160,6 +198,11 @@ public partial class MainWindow : Window
                 !double.TryParse(ScaleBox.Text, out var scale) || scale is < .4 or > 3 ||
                 !double.TryParse(OpacityBox.Text, out var opacity) || opacity is < .1 or > 1)
                 throw new InvalidOperationException("위치 X/Y, 크기(0.4~3), 불투명도(0.1~1)를 올바르게 입력하세요.");
+            if (!double.TryParse(CurrentSizeBox.Text, out var currentSize) || currentSize is < .5 or > 2.5 ||
+                !double.TryParse(OtherSizeBox.Text, out var otherSize) || otherSize is < .5 or > 2.5 ||
+                !double.TryParse(MySizeBox.Text, out var mySize) || mySize is < .5 or > 2.5 ||
+                !double.TryParse(TeamBoxSizeBox.Text, out var teamBoxSize) || teamBoxSize is < .5 or > 2.5)
+                throw new InvalidOperationException("개별 크기는 0.5~2.5 사이로 입력하세요.");
             if (ImageBox.Text.Length > 0 && !File.Exists(ImageBox.Text)) throw new InvalidOperationException("이미지 파일을 찾을 수 없습니다.");
             if (ImageBox.Text.Length > 0 && new FileInfo(ImageBox.Text).Length > 10 * 1024 * 1024) throw new InvalidOperationException("이미지는 10MB 이하여야 합니다.");
             try
@@ -184,6 +227,9 @@ public partial class MainWindow : Window
             }
             else _settings.ItemImage = "";
             _settings.OverlayX = x; _settings.OverlayY = y; _settings.OverlayScale = scale; _settings.OverlayOpacity = opacity;
+            _settings.CurrentSize = currentSize; _settings.OtherSize = otherSize;
+            _settings.MySize = mySize; _settings.TeamBoxSize = teamBoxSize;
+            _settings.CombineMySize = CombineMySizeBox.IsChecked == true;
             _settings.ShowOverlay = ShowBox.IsChecked == true; _settings.HideFromCapture = CaptureBox.IsChecked == true;
             _settings.Party1Color = Party1ColorBox.Text; _settings.Party2Color = Party2ColorBox.Text;
             _settings.CurrentOutlineColor = CurrentOutlineBox.Text; _settings.MyOutlineColor = MyOutlineBox.Text;
@@ -199,19 +245,40 @@ public partial class MainWindow : Window
     void HotkeysClick(object sender, RoutedEventArgs e)
     {
         _settings.SpendKey = SpendKeyBox.Text; _settings.AddKey = AddKeyBox.Text;
-        _settings.ResetCountsKey = ResetCountsKeyBox.Text; _settings.ResetTurnKey = ResetTurnKeyBox.Text; _settings.ToggleKey = ToggleKeyBox.Text;
+        _settings.ResetCountsKey = ResetCountsKeyBox.Text; _settings.ResetTurnKey = ResetTurnKeyBox.Text;
+        _settings.ToggleKey = ToggleKeyBox.Text; _settings.EditKey = EditKeyBox.Text;
         _settings.Save(); ApplyHotkeys();
     }
     void ApplyHotkeys()
     {
         var failed = _hotkeys.Apply(_settings, () => _ = ChangeCount(-1), () => _ = ChangeCount(1),
-            () => _ = ResetCounts(), () => _ = ResetTurn(), ToggleOverlay);
+            () => _ = ResetCounts(), () => _ = ResetTurn(), ToggleOverlay, ToggleEditMode);
         Status(failed.Count == 0 ? "단축키를 적용했습니다." : $"등록하지 못한 단축키: {string.Join(", ", failed)}.");
     }
     void ToggleOverlay()
     {
+        if (_overlay.IsEditing) _overlay.SetEditMode(false);
         _settings.ShowOverlay = !_settings.ShowOverlay;
         ShowBox.IsChecked = _settings.ShowOverlay;
         _settings.Save(); _overlay.ApplyStyle();
+    }
+    void EditClick(object sender, RoutedEventArgs e) => ToggleEditMode();
+    void ToggleEditMode()
+    {
+        _overlay.SetEditMode(!_overlay.IsEditing);
+        EditButton.Content = _overlay.IsEditing ? "편집 모드 종료" : "편집 모드 시작";
+        SyncSizeBoxes();
+    }
+    void SyncSizeBoxes()
+    {
+        CurrentSizeBox.Text = _settings.CurrentSize.ToString("0.00");
+        OtherSizeBox.Text = _settings.OtherSize.ToString("0.00");
+        MySizeBox.Text = _settings.MySize.ToString("0.00");
+        TeamBoxSizeBox.Text = _settings.TeamBoxSize.ToString("0.00");
+        ScaleBox.Text = _settings.OverlayScale.ToString("0.00");
+        OpacityBox.Text = _settings.OverlayOpacity.ToString("0.00");
+        XBox.Text = _settings.OverlayX.ToString("0");
+        YBox.Text = _settings.OverlayY.ToString("0");
+        if (_overlay is not null) EditButton.Content = _overlay.IsEditing ? "편집 모드 종료" : "편집 모드 시작";
     }
 }

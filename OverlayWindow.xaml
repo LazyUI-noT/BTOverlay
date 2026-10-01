@@ -2,6 +2,26 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent" ShowInTaskbar="False" Topmost="True" ShowActivated="False"
         ResizeMode="NoResize" SizeToContent="WidthAndHeight">
     <Border x:Name="Root" Padding="6" Background="Transparent">
-        <StackPanel x:Name="PartiesPanel" Orientation="Horizontal" />
+        <StackPanel>
+            <Border x:Name="EditBar" Visibility="Collapsed" Background="#E6232933" BorderBrush="#FFB88D35" BorderThickness="1" Padding="6" Margin="0,0,0,4">
+                <StackPanel>
+                    <TextBlock x:Name="EditHint" Text="편집 중 · 드래그: 이동 · 오른쪽 아래: 전체 크기" Foreground="White" FontSize="11" Margin="0,0,0,5"/>
+                    <WrapPanel VerticalAlignment="Center">
+                        <ComboBox x:Name="EditTargetBox" Width="107" SelectedIndex="0" Margin="0,0,4,0">
+                            <ComboBoxItem Content="전체 크기"/><ComboBoxItem Content="현재 차례"/><ComboBoxItem Content="나머지"/><ComboBoxItem Content="내 표시"/><ComboBoxItem Content="파티 상자"/>
+                        </ComboBox>
+                        <Button Content="−" Width="25" Click="DecreaseClick"/><Button Content="+" Width="25" Click="IncreaseClick" Margin="3,0,8,0"/>
+                        <TextBlock Text="불투명도" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <Slider x:Name="EditOpacitySlider" Minimum="0.1" Maximum="1" Width="80" ValueChanged="EditOpacityChanged" VerticalAlignment="Center"/>
+                        <Button Content="완료" Click="FinishEditClick" Margin="8,0,0,0"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+            <StackPanel x:Name="PartiesPanel" Orientation="Horizontal" />
+            <Border x:Name="ScaleHandle" Width="24" Height="24" Background="#D0343B4A" BorderBrush="White" BorderThickness="1"
+                    HorizontalAlignment="Right" Visibility="Collapsed" Cursor="SizeNWSE" MouseLeftButtonDown="ScaleHandleDown">
+                <TextBlock Text="◢" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+        </StackPanel>
     </Border>
 </Window>

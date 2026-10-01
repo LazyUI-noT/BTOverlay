@@ -13,6 +13,11 @@ public sealed class UserSettings
     public double OverlayY { get; set; } = 80;
     public double OverlayScale { get; set; } = 1;
     public double OverlayOpacity { get; set; } = .88;
+    public double CurrentSize { get; set; } = 1;
+    public double OtherSize { get; set; } = 1;
+    public double MySize { get; set; } = 1;
+    public double TeamBoxSize { get; set; } = 1;
+    public bool CombineMySize { get; set; }
     public string Party1Color { get; set; } = "#32CD32";
     public string Party2Color { get; set; } = "#9370DB";
     public string CurrentOutlineColor { get; set; } = "#FFD700";
@@ -28,6 +33,7 @@ public sealed class UserSettings
     public string ResetCountsKey { get; set; } = "Ctrl+Alt+F3";
     public string ResetTurnKey { get; set; } = "Ctrl+Alt+F4";
     public string ToggleKey { get; set; } = "Ctrl+Alt+F5";
+    public string EditKey { get; set; } = "Ctrl+Alt+F6";
     public Guid GuestId { get; set; } = Guid.NewGuid();
     public static readonly string DataFolder = Path.Combine(AppContext.BaseDirectory, "Data");
     static readonly string PathName = Path.Combine(DataFolder, "settings.json");

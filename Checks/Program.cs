@@ -34,8 +34,15 @@ static void Preview(int style)
     board.Counts = [0, 1, 3, 2, 3, 3, 0, 1];
     board.MarkOffTurn(4);
     var settings = new UserSettings { LayoutStyle = style, GoldOnMyTurn = true, FlashGold = false,
-        CurrentOutlineColor = "#FF6600", MyOutlineColor = "#00FFFF" };
+        CurrentOutlineColor = "#FF6600", MyOutlineColor = "#00FFFF", CurrentSize = 1.2,
+        OtherSize = .8, MySize = 1.1, TeamBoxSize = 1.15, CombineMySize = true, ShowOverlay = false };
     var window = new OverlayWindow(board, settings);
+    window.SetEditMode(true);
+    Check(window.IsEditing && window.Visibility == Visibility.Visible, "edit mode reveals the overlay");
+    window.SetEditMode(false);
+    Check(!window.IsEditing && window.Visibility == Visibility.Hidden, "edit mode restores hidden state");
+    settings.ShowOverlay = true;
+    window.ApplyStyle();
     var content = (FrameworkElement)window.Content;
     content.Measure(new Size(1200, 400));
     content.Arrange(new Rect(content.DesiredSize));
@@ -65,7 +72,7 @@ try
     {
         using var keys = new Hotkeys();
         var settings = new UserSettings { SpendKey = "2" };
-        var failed = keys.Apply(settings, () => { }, () => { }, () => { }, () => { }, () => { });
+        var failed = keys.Apply(settings, () => { }, () => { }, () => { }, () => { }, () => { }, () => { });
         Check(!failed.Contains("사용 −1"), "single key listener installs");
     });
     Check(new UserSettings().EnlargeCurrentImage, "current image enlargement defaults on");

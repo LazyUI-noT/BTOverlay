@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -7,7 +5,7 @@ using System.Windows.Interop;
 namespace BToverlay;
 
 // Modified combinations use RegisterHotKey. A plain key is observed with a
-// pass-through keyboard hook only while LOSTARK is foreground, so the game
+// pass-through keyboard hook in every foreground app, so the app
 // still receives its own key press.
 public sealed class Hotkeys : IDisposable
 {
@@ -22,7 +20,7 @@ public sealed class Hotkeys : IDisposable
     IntPtr _keyboardHook;
     public Hotkeys() { _source.AddHook(WindowHook); _keyboardProc = KeyboardHook; }
 
-    public List<string> Apply(UserSettings settings, Action spend, Action add, Action resetCounts, Action resetTurn, Action toggle)
+    public List<string> Apply(UserSettings settings, Action spend, Action add, Action resetCounts, Action resetTurn, Action toggle, Action edit)
     {
         foreach (var id in _actions.Keys) UnregisterHotKey(_source.Handle, id);
         _actions.Clear(); _plainActions.Clear(); _down.Clear();
@@ -32,7 +30,7 @@ public sealed class Hotkeys : IDisposable
         {
             ("사용 −1", settings.SpendKey, spend), ("추가 +1", settings.AddKey, add),
             ("아이템 초기화", settings.ResetCountsKey, resetCounts), ("차례 초기화", settings.ResetTurnKey, resetTurn),
-            ("오버레이 표시", settings.ToggleKey, toggle)
+            ("오버레이 표시", settings.ToggleKey, toggle), ("편집 모드", settings.EditKey, edit)
         };
         for (var i = 0; i < entries.Length; i++)
         {
@@ -94,7 +92,7 @@ public sealed class Hotkeys : IDisposable
             var key = (uint)Marshal.ReadInt32(data);
             if (msg is WmKeyUp or WmSysKeyUp) _down.Remove(key);
             else if (msg is WmKeyDown or WmSysKeyDown && _plainActions.ContainsKey(key) && _down.Add(key) &&
-                !AnyModifierDown() && IsLostArkForeground())
+                !AnyModifierDown())
                 _source.Dispatcher.BeginInvoke(_plainActions[key]);
         }
         return CallNextHookEx(_keyboardHook, code, message, data);
@@ -102,13 +100,6 @@ public sealed class Hotkeys : IDisposable
     static bool AnyModifierDown() =>
         IsDown(0x11) || IsDown(0x10) || IsDown(0x12) || IsDown(0x5B) || IsDown(0x5C);
     static bool IsDown(int vk) => (GetAsyncKeyState(vk) & 0x8000) != 0;
-    static bool IsLostArkForeground()
-    {
-        var window = GetForegroundWindow();
-        if (window == IntPtr.Zero || GetWindowThreadProcessId(window, out var pid) == 0) return false;
-        try { using var process = Process.GetProcessById((int)pid); return process.ProcessName.Equals("LOSTARK", StringComparison.OrdinalIgnoreCase); }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Win32Exception) { return false; }
-    }
     public void Dispose()
     {
         if (_keyboardHook != IntPtr.Zero) UnhookWindowsHookEx(_keyboardHook);
@@ -122,6 +113,4 @@ public sealed class Hotkeys : IDisposable
     [DllImport("user32.dll")] static extern bool UnhookWindowsHookEx(IntPtr hook);
     [DllImport("user32.dll")] static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr message, IntPtr data);
     [DllImport("user32.dll")] static extern short GetAsyncKeyState(int key);
-    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
-    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
 }

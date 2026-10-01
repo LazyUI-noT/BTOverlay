@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace BToverlay;
@@ -16,6 +17,13 @@ public partial class OverlayWindow : Window
     readonly UserSettings _settings;
     readonly DispatcherTimer _markerTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
     ImageSource? _itemImage;
+    bool _editing;
+    bool _resizing;
+    Point _resizeStart;
+    double _resizeScale;
+    double _resizeWidth;
+    public bool IsEditing => _editing;
+    public event Action? EditSettingsChanged;
     public bool CaptureExclusionApplied { get; private set; } = true;
     public OverlayWindow(Board board, UserSettings settings)
     {
@@ -25,6 +33,9 @@ public partial class OverlayWindow : Window
         _markerTimer.Start();
         Closed += (_, _) => { _markerTimer.Stop(); _board.Changed -= Draw; };
         SourceInitialized += (_, _) => ApplyCapture();
+        Root.MouseLeftButtonDown += RootMouseDown;
+        MouseMove += OverlayMouseMove;
+        MouseLeftButtonUp += (_, _) => FinishResize();
         Draw(); ApplyStyle();
     }
     public void ApplyStyle()
@@ -33,7 +44,7 @@ public partial class OverlayWindow : Window
         Left = _settings.OverlayX; Top = _settings.OverlayY;
         Root.LayoutTransform = new ScaleTransform(Math.Clamp(_settings.OverlayScale, .4, 3), Math.Clamp(_settings.OverlayScale, .4, 3));
         Opacity = Math.Clamp(_settings.OverlayOpacity, .1, 1);
-        Visibility = _settings.ShowOverlay ? Visibility.Visible : Visibility.Hidden;
+        Visibility = _settings.ShowOverlay || _editing ? Visibility.Visible : Visibility.Hidden;
         ApplyCapture(); Draw();
     }
     void ApplyCapture()
@@ -41,9 +52,92 @@ public partial class OverlayWindow : Window
         var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd == IntPtr.Zero) return;
         var style = GetWindowLongPtr(hwnd, -20);
-        SetWindowLongPtr(hwnd, -20, style | (nint)0x20 | (nint)0x08000000 | (nint)0x80);
+        style |= (nint)0x80;
+        style = _editing ? style & ~(nint)0x20 & ~(nint)0x08000000 : style | (nint)0x20 | (nint)0x08000000;
+        SetWindowLongPtr(hwnd, -20, style);
+        SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, 0x27);
         CaptureExclusionApplied = SetWindowDisplayAffinity(hwnd, _settings.HideFromCapture ? 0x11u : 0u);
     }
+    public void SetEditMode(bool editing)
+    {
+        if (_editing == editing) return;
+        _editing = editing;
+        EditBar.Visibility = editing ? Visibility.Visible : Visibility.Collapsed;
+        ScaleHandle.Visibility = editing ? Visibility.Visible : Visibility.Collapsed;
+        if (editing) EditOpacitySlider.Value = _settings.OverlayOpacity;
+        ApplyStyle();
+        if (!editing) SaveEditSettings();
+    }
+    void RootMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_editing || _resizing || IsInside(e.OriginalSource as DependencyObject, EditBar) ||
+            IsInside(e.OriginalSource as DependencyObject, ScaleHandle)) return;
+        try
+        {
+            DragMove();
+            _settings.OverlayX = Left; _settings.OverlayY = Top;
+            SaveEditSettings();
+        }
+        catch (InvalidOperationException) { }
+    }
+    static bool IsInside(DependencyObject? child, DependencyObject parent)
+    {
+        while (child is not null)
+        {
+            if (child == parent) return true;
+            child = VisualTreeHelper.GetParent(child);
+        }
+        return false;
+    }
+    void ScaleHandleDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_editing) return;
+        _resizing = true;
+        _resizeStart = PointToScreen(e.GetPosition(this));
+        _resizeScale = _settings.OverlayScale;
+        _resizeWidth = Math.Max(1, ActualWidth);
+        ScaleHandle.CaptureMouse();
+        e.Handled = true;
+    }
+    void OverlayMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_resizing || e.LeftButton != MouseButtonState.Pressed) return;
+        var current = PointToScreen(e.GetPosition(this));
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var delta = (current.X - _resizeStart.X) / dpi.DpiScaleX;
+        _settings.OverlayScale = Math.Clamp(_resizeScale * (1 + delta / _resizeWidth), .4, 3);
+        ApplyStyle(); EditSettingsChanged?.Invoke();
+    }
+    void FinishResize()
+    {
+        if (!_resizing) return;
+        _resizing = false;
+        ScaleHandle.ReleaseMouseCapture();
+        SaveEditSettings();
+    }
+    void DecreaseClick(object sender, RoutedEventArgs e) => AdjustSelectedSize(-.05);
+    void IncreaseClick(object sender, RoutedEventArgs e) => AdjustSelectedSize(.05);
+    void AdjustSelectedSize(double change)
+    {
+        switch (EditTargetBox.SelectedIndex)
+        {
+            case 0: _settings.OverlayScale = Math.Clamp(_settings.OverlayScale + change, .4, 3); break;
+            case 1: _settings.CurrentSize = Math.Clamp(_settings.CurrentSize + change, .5, 2.5); break;
+            case 2: _settings.OtherSize = Math.Clamp(_settings.OtherSize + change, .5, 2.5); break;
+            case 3: _settings.MySize = Math.Clamp(_settings.MySize + change, .5, 2.5); break;
+            case 4: _settings.TeamBoxSize = Math.Clamp(_settings.TeamBoxSize + change, .5, 2.5); break;
+        }
+        ApplyStyle(); SaveEditSettings();
+    }
+    void EditOpacityChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!_editing) return;
+        _settings.OverlayOpacity = e.NewValue;
+        Opacity = e.NewValue;
+        SaveEditSettings();
+    }
+    void FinishEditClick(object sender, RoutedEventArgs e) => SetEditMode(false);
+    void SaveEditSettings() { _settings.Save(); EditSettingsChanged?.Invoke(); }
     void Draw()
     {
         if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(Draw); return; }
@@ -63,7 +157,7 @@ public partial class OverlayWindow : Window
             {
                 var slot = _board.Order[pos];
                 if (!_board.Included[slot]) continue;
-                var size = _settings.EnlargeCurrentImage && slot == _board.Turn ? 58 : 46;
+                var size = (int)Math.Round((_settings.EnlargeCurrentImage && slot == _board.Turn ? 58 : 46) * TileMultiplier(slot));
                 var width = Math.Max(54, size + 8);
                 var column = new StackPanel { Width = width, Margin = new Thickness(2, 0, 2, 0) };
                 column.Children.Add(new TextBlock { Text = slot == _board.StartSlot ? "▼ 시작" : "", Height = 12,
@@ -80,7 +174,7 @@ public partial class OverlayWindow : Window
     void DrawCompact()
     {
         var own = new StackPanel { Margin = new Thickness(2, 3, 12, 3), VerticalAlignment = VerticalAlignment.Center };
-        own.Children.Add(CreateIconTile(_board.MySlot, _settings.EnlargeCurrentImage && _board.MySlot == _board.Turn ? 70 : 56));
+        own.Children.Add(CreateIconTile(_board.MySlot, (int)Math.Round((_settings.EnlargeCurrentImage && _board.MySlot == _board.Turn ? 70 : 56) * TileMultiplier(_board.MySlot))));
         own.Children.Add(new TextBlock { Text = "나", Foreground = Brushes.White, FontSize = 10, FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center });
         PartiesPanel.Children.Add(own);
@@ -107,7 +201,15 @@ public partial class OverlayWindow : Window
         return new Border { Child = content, BorderBrush = new SolidColorBrush(color),
             BorderThickness = new Thickness(2), CornerRadius = new CornerRadius(3),
             Background = new SolidColorBrush(Color.FromArgb(200, color.R, color.G, color.B)),
-            Padding = new Thickness(4), Margin = new Thickness(3) };
+            Padding = new Thickness(4), Margin = new Thickness(3),
+            LayoutTransform = new ScaleTransform(Math.Clamp(_settings.TeamBoxSize, .5, 2.5), Math.Clamp(_settings.TeamBoxSize, .5, 2.5)) };
+    }
+    double TileMultiplier(int slot)
+    {
+        var current = slot == _board.Turn;
+        var mine = slot == _board.MySlot;
+        if (mine && current) return _settings.CurrentSize * (_settings.CombineMySize ? _settings.MySize : 1);
+        return mine ? _settings.MySize : current ? _settings.CurrentSize : _settings.OtherSize;
     }
     Border CreateIconTile(int slot, int size)
     {
@@ -143,7 +245,7 @@ public partial class OverlayWindow : Window
         var current = slot == _board.Turn;
         var mine = slot == _board.MySlot;
         var marked = _board.HasOffTurnMarker(slot);
-        var size = _settings.EnlargeCurrentImage && current ? 36 : 29;
+        var size = (int)Math.Round((_settings.EnlargeCurrentImage && current ? 36 : 29) * TileMultiplier(slot));
         var currentBrush = OutlineBrush(_settings.CurrentOutlineColor, Brushes.Gold);
         var myBrush = OutlineBrush(_settings.MyOutlineColor, Brushes.DeepSkyBlue);
         var tile = new Border { Width = size, Height = size, Margin = new Thickness(2),
@@ -191,4 +293,5 @@ public partial class OverlayWindow : Window
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] static extern nint GetWindowLongPtr(IntPtr hwnd, int index);
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] static extern nint SetWindowLongPtr(IntPtr hwnd, int index, nint value);
     [DllImport("user32.dll")] static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity);
+    [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
 }
