@@ -173,11 +173,13 @@ public partial class OverlayWindow : Window
     }
     void DrawCompact()
     {
-        var own = new StackPanel { Margin = new Thickness(2, 3, 12, 3), VerticalAlignment = VerticalAlignment.Center };
-        own.Children.Add(CreateIconTile(_board.MySlot, (int)Math.Round((_settings.EnlargeCurrentImage && _board.MySlot == _board.Turn ? 70 : 56) * TileMultiplier(_board.MySlot))));
-        own.Children.Add(new TextBlock { Text = "나", Foreground = Brushes.White, FontSize = 10, FontWeight = FontWeights.Bold,
+        var currentSlot = _board.Turn;
+        var currentPosition = Array.IndexOf(_board.Order, currentSlot);
+        var current = new StackPanel { Margin = new Thickness(2, 3, 12, 3), VerticalAlignment = VerticalAlignment.Center };
+        current.Children.Add(CreateIconTile(currentSlot, (int)Math.Round((_settings.EnlargeCurrentImage ? 70 : 56) * TileMultiplier(currentSlot))));
+        current.Children.Add(new TextBlock { Text = $"{currentPosition / 4 + 1}-{currentPosition % 4 + 1}", Foreground = Brushes.White, FontSize = 10, FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center });
-        PartiesPanel.Children.Add(own);
+        PartiesPanel.Children.Add(current);
         var groups = new StackPanel();
         for (var party = 0; party < 2; party++)
         {
@@ -251,10 +253,10 @@ public partial class OverlayWindow : Window
         var tile = new Border { Width = size, Height = size, Margin = new Thickness(2),
             BorderThickness = new Thickness(current || mine || marked ? 2 : 1),
             BorderBrush = current ? currentBrush : mine ? myBrush : marked ? Brushes.Gold : count == 0 ? Brushes.DimGray : Brushes.White,
-            Background = current ? Brushes.Gold : count == 0 ? new SolidColorBrush(Color.FromRgb(65, 48, 50)) : Brushes.White,
+            Background = count == 0 ? new SolidColorBrush(Color.FromRgb(65, 48, 50)) : Brushes.White,
             CornerRadius = new CornerRadius(1) };
         var grid = new Grid();
-        grid.Children.Add(new TextBlock { Text = count.ToString(), Foreground = count == 0 && !current ? Brushes.White : Brushes.Black,
+        grid.Children.Add(new TextBlock { Text = count.ToString(), Foreground = count == 0 ? Brushes.White : Brushes.Black,
             FontWeight = FontWeights.Bold, FontSize = 15, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
         if (slot == _board.StartSlot)
             grid.Children.Add(new TextBlock { Text = "시", Foreground = Brushes.LimeGreen, Background = Brushes.Black,

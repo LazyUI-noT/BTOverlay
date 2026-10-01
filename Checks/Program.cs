@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -30,7 +31,7 @@ static async Task Until(Func<bool> condition, string name)
 static void Check(bool condition, string name) { if (!condition) throw new Exception(name); }
 static void Preview(int style)
 {
-    var board = new Board { MySlot = 2, StartSlot = 5, Turn = 2 };
+    var board = new Board { MySlot = 2, StartSlot = 5, Turn = style == 2 ? 3 : 2 };
     board.Counts = [0, 1, 3, 2, 3, 3, 0, 1];
     board.MarkOffTurn(4);
     var settings = new UserSettings { LayoutStyle = style, GoldOnMyTurn = true, FlashGold = false,
@@ -43,6 +44,18 @@ static void Preview(int style)
     Check(!window.IsEditing && window.Visibility == Visibility.Hidden, "edit mode restores hidden state");
     settings.ShowOverlay = true;
     window.ApplyStyle();
+    if (style == 2)
+    {
+        var parties = (StackPanel)((StackPanel)((Border)window.Content).Child).Children[1];
+        var featured = (StackPanel)parties.Children[0];
+        Check(((TextBlock)featured.Children[1]).Text == "1-4", "compact featured tile follows host display order");
+        var badge = (TextBlock)((Border)((Grid)((Border)featured.Children[0]).Child).Children[1]).Child;
+        Check(badge.Text == "2", "compact featured tile shows current player's count");
+        var groups = (StackPanel)parties.Children[1];
+        var firstParty = (StackPanel)((Border)groups.Children[0]).Child;
+        var currentStatus = (Border)firstParty.Children[3];
+        Check(((SolidColorBrush)currentStatus.Background).Color == Colors.White, "compact current status has no gold fill");
+    }
     var content = (FrameworkElement)window.Content;
     content.Measure(new Size(1200, 400));
     content.Arrange(new Rect(content.DesiredSize));
