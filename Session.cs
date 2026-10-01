@@ -83,7 +83,9 @@ public sealed class Session : IAsyncDisposable
         try
         {
             invite = JsonSerializer.Deserialize<Invite>(Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim())))!;
-            if (invite is null || invite.Slot is < 1 or > 7 || invite.Port is < 1 or > 65535 || invite.Address.Length > 255) throw new FormatException();
+            if (invite is null || invite.Slot is < 1 or > 7 || invite.Port is < 1 or > 65535 ||
+                string.IsNullOrWhiteSpace(invite.Address) || invite.Address.Length > 255 ||
+                Uri.CheckHostName(invite.Address) == UriHostNameType.Unknown) throw new FormatException();
             secret = Convert.FromBase64String(invite.Secret);
             if (secret.Length != 32 || invite.CertificateHash.Length != 64 || !invite.CertificateHash.All(Uri.IsHexDigit)) throw new FormatException();
         }

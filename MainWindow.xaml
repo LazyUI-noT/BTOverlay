@@ -139,26 +139,36 @@
           <StackPanel>
             <GroupBox Header="연결">
               <StackPanel>
-                <TextBlock Text="이름과 호스트 주소" Foreground="#B9D6F0" Margin="0,0,0,8"/>
+                <TextBlock Text="내 이름과 세션 연결" Foreground="#B9D6F0" Margin="0,0,0,8"/>
                 <WrapPanel Margin="0,0,0,9">
                   <TextBlock Text="내 이름" Width="90" VerticalAlignment="Center"/>
-                  <TextBox x:Name="NameBox" Width="150" AutomationProperties.Name="내 이름" Margin="0,0,20,0"/>
-                  <TextBlock Text="호스트 주소" Width="90" VerticalAlignment="Center"/>
-                  <TextBox x:Name="AddressBox" Width="210" AutomationProperties.Name="호스트 주소"/>
+                  <TextBox x:Name="NameBox" Width="220" AutomationProperties.Name="내 이름"/>
                 </WrapPanel>
-                <WrapPanel Margin="0,0,0,9">
-                  <TextBlock Text="TCP 포트" Width="90" VerticalAlignment="Center"/>
-                  <TextBox x:Name="PortBox" Width="84" AutomationProperties.Name="TCP 포트" Margin="0,0,20,0"/>
+                <Expander x:Name="HostConfigExpander" Header="호스트 연결 설정 (호스트만 열기)" IsExpanded="False" Margin="0,0,0,9">
+                  <StackPanel Margin="8,8,8,4">
+                    <WrapPanel Margin="0,0,0,8">
+                      <TextBlock Text="초대 주소" Width="90" VerticalAlignment="Center"/>
+                      <TextBox x:Name="AddressBox" Width="210" AutomationProperties.Name="초대 주소" ToolTip="게스트가 연결할 공인 IP 또는 도메인"/>
+                    </WrapPanel>
+                    <WrapPanel>
+                      <TextBlock Text="TCP 포트" Width="90" VerticalAlignment="Center"/>
+                      <TextBox x:Name="PortBox" Width="84" AutomationProperties.Name="TCP 포트"/>
+                    </WrapPanel>
+                    <TextBlock Text="인터넷 접속용 공인 IP 또는 도메인을 입력하세요. 선택한 포트를 공유기에서 이 PC로 전달하고 방화벽에서 허용해야 합니다. 주소는 초대 토큰에 포함됩니다."
+                               Foreground="#B9D6F0" TextWrapping="Wrap" Margin="0,8,0,2"/>
+                  </StackPanel>
+                </Expander>
+                <WrapPanel Margin="0,0,0,10">
                   <Button Content="호스트 시작" Click="HostClick" Background="#24699E" Margin="0,0,8,0"/>
                   <Button Content="나가기" Click="LeaveClick"/>
                 </WrapPanel>
-                <TextBlock Text="인터넷에서 참가하려면 접속 가능한 공인 IP 또는 도메인을 입력하고, 선택한 TCP 포트를 호스트 PC로 전달하세요."
-                           Foreground="#B9D6F0" TextWrapping="Wrap" Margin="0,2,0,12"/>
                 <TextBlock Text="초대 토큰으로 참가" FontWeight="SemiBold" Margin="0,0,0,6"/>
                 <WrapPanel>
                   <TextBox x:Name="TokenBox" Width="390" AutomationProperties.Name="초대 토큰" ToolTip="초대 토큰을 붙여 넣으세요" Margin="0,0,8,0"/>
                   <Button Content="토큰으로 참가" Click="JoinClick" Background="#24699E"/>
                 </WrapPanel>
+                <TextBlock Text="참가자는 호스트 주소를 따로 입력할 필요가 없습니다. 토큰에 주소와 포트가 포함됩니다."
+                           Foreground="#B9D6F0" TextWrapping="Wrap" Margin="0,7,0,0"/>
               </StackPanel>
             </GroupBox>
             <GroupBox Header="참가자와 차례">

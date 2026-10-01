@@ -119,7 +119,7 @@ try
     var probe = new TcpListener(IPAddress.Loopback, 0);
     probe.Start(); var port = ((IPEndPoint)probe.LocalEndpoint).Port; probe.Stop();
     var hs = new UserSettings { Name = "Host", HostAddress = "127.0.0.1", Port = port, MaxItems = 3 };
-    var gs = new UserSettings { Name = "Guest", MaxItems = 5 };
+    var gs = new UserSettings { Name = "Guest", HostAddress = "", MaxItems = 5 };
     var hb = new Board(); var gb = new Board();
     host = await dispatcher.InvokeAsync(() => Session.HostAsync(hb, hs)).Task.Unwrap();
     host.ApproveJoin = (_, _) => Task.FromResult(true);

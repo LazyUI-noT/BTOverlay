@@ -43,10 +43,15 @@ public partial class MainWindow : Window
         Closing += (_, _) => { _settings.Save(); _hotkeys?.Dispose(); _ = _session?.DisposeAsync(); _overlay?.Close(); };
     }
     void Status(string text) { StatusText.Text = text; }
-    void SaveBasic()
+    void SaveName()
     {
         _settings.Name = NameBox.Text.Trim();
         if (_settings.Name.Length is < 1 or > 24) throw new InvalidOperationException("이름은 1~24자로 입력하세요.");
+        _settings.Save();
+    }
+    void SaveBasic()
+    {
+        SaveName();
         _settings.HostAddress = AddressBox.Text.Trim();
         if (_settings.HostAddress.Length is < 1 or > 255) throw new InvalidOperationException("호스트 IP 주소 또는 도메인을 입력하세요.");
         if (!int.TryParse(PortBox.Text, out var port) || port is < 1 or > 65535) throw new InvalidOperationException("포트는 1~65535 사이여야 합니다.");
@@ -63,6 +68,7 @@ public partial class MainWindow : Window
             _session.ApproveJoin = (slot, name) => Task.FromResult(MessageBox.Show(this,
                 $"{name}님이 참가자 {slot + 1}번으로 참가하려고 합니다. 허용할까요?", "참가 요청", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes);
             _session.Notice += Status; _session.Changed += RenderPlayers;
+            HostConfigExpander.IsExpanded = false;
             Status($"TCP {_settings.Port} 포트에서 호스트 중입니다. 참가자별 초대 토큰을 만드세요.");
             RenderPlayers(); _board.Refresh();
         }
@@ -72,7 +78,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            SaveBasic();
+            SaveName();
             if (_session is not null) await _session.DisposeAsync();
             Status("연결 중입니다. 호스트의 승인을 기다리는 중...");
             _session = await Session.JoinAsync(_board, _settings, TokenBox.Text);
