@@ -18,6 +18,7 @@ public sealed class UserSettings
     public double OtherSize { get; set; } = 1;
     public double MySize { get; set; } = 1;
     public double TeamBoxSize { get; set; } = 1;
+    public double CurrentNumberFontSize { get; set; } = 10;
     public bool CombineMySize { get; set; }
     public string Party1Color { get; set; } = "#32CD32";
     public string Party2Color { get; set; } = "#9370DB";
@@ -92,7 +93,7 @@ public sealed class Board
         for (var step = 0; step < 8; step++)
         {
             var candidate = Order[(startIndex + step) % 8];
-            if (Included[candidate]) { Turn = candidate; break; }
+            if (CanTakeTurn(candidate)) { Turn = candidate; break; }
         }
         Refresh();
     }
@@ -107,10 +108,11 @@ public sealed class Board
             for (int step = 1; step <= 8; step++)
             {
                 var next = Order[(index + step) % 8];
-                if (Included[next]) { Turn = next; break; }
+                if (CanTakeTurn(next)) { Turn = next; break; }
             }
         }
         Refresh();
         return true;
     }
+    bool CanTakeTurn(int slot) => Included[slot] && Counts[slot] > 0;
 }

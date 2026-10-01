@@ -177,7 +177,7 @@ public partial class OverlayWindow : Window
         var currentPosition = Array.IndexOf(_board.Order, currentSlot);
         var current = new StackPanel { Margin = new Thickness(2, 3, 12, 3), VerticalAlignment = VerticalAlignment.Center };
         current.Children.Add(CreateIconTile(currentSlot, (int)Math.Round((_settings.EnlargeCurrentImage ? 70 : 56) * TileMultiplier(currentSlot))));
-        current.Children.Add(new TextBlock { Text = $"{currentPosition / 4 + 1}-{currentPosition % 4 + 1}", Foreground = Brushes.White, FontSize = 10, FontWeight = FontWeights.Bold,
+        current.Children.Add(new TextBlock { Text = $"{currentPosition / 4 + 1}-{currentPosition % 4 + 1}", Foreground = Brushes.White, FontSize = Math.Clamp(_settings.CurrentNumberFontSize, 6, 40), FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center });
         PartiesPanel.Children.Add(current);
         var groups = new StackPanel();

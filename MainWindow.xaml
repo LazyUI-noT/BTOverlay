@@ -227,6 +227,10 @@
                   <TextBlock Text="파티 상자 크기" Width="125" VerticalAlignment="Center"/>
                   <TextBox x:Name="TeamBoxSizeBox" Width="65" AutomationProperties.Name="파티 상자 크기"/>
                 </WrapPanel>
+                <WrapPanel Margin="0,0,0,7">
+                  <TextBlock Text="현재 플레이어 번호 글자 크기" Width="185" VerticalAlignment="Center"/>
+                  <TextBox x:Name="CurrentNumberFontSizeBox" Width="65" AutomationProperties.Name="현재 플레이어 번호 글자 크기" ToolTip="스타일 2의 1-4 번호 글자 크기 (6~40)"/>
+                </WrapPanel>
                 <CheckBox x:Name="CombineMySizeBox" Content="내 차례에 현재 차례 크기와 내 표시 크기를 함께 적용" Margin="0,0,0,7"/>
                 <TextBlock Text="편집 모드에서는 오버레이를 끌어 이동하고, 크기와 불투명도를 화면에서 조절할 수 있습니다."
                            Foreground="#B9D6F0" TextWrapping="Wrap"/>

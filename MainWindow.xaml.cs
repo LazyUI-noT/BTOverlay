@@ -224,6 +224,8 @@ public partial class MainWindow : Window
                 !double.TryParse(ScaleBox.Text, out var scale) || scale is < .4 or > 3 ||
                 !double.TryParse(OpacityBox.Text, out var opacity) || opacity is < .1 or > 1)
                 throw new InvalidOperationException("위치 X/Y, 크기(0.4~3), 불투명도(0.1~1)를 올바르게 입력하세요.");
+            if (!double.TryParse(CurrentNumberFontSizeBox.Text, out var currentNumberFontSize) || currentNumberFontSize is < 6 or > 40)
+                throw new InvalidOperationException("현재 플레이어 번호 글자 크기는 6~40 사이로 입력하세요.");
             if (!double.TryParse(CurrentSizeBox.Text, out var currentSize) || currentSize is < .5 or > 2.5 ||
                 !double.TryParse(OtherSizeBox.Text, out var otherSize) || otherSize is < .5 or > 2.5 ||
                 !double.TryParse(MySizeBox.Text, out var mySize) || mySize is < .5 or > 2.5 ||
@@ -255,6 +257,7 @@ public partial class MainWindow : Window
             _settings.OverlayX = x; _settings.OverlayY = y; _settings.OverlayScale = scale; _settings.OverlayOpacity = opacity;
             _settings.CurrentSize = currentSize; _settings.OtherSize = otherSize;
             _settings.MySize = mySize; _settings.TeamBoxSize = teamBoxSize;
+            _settings.CurrentNumberFontSize = currentNumberFontSize;
             _settings.CombineMySize = CombineMySizeBox.IsChecked == true;
             _settings.ShowOverlay = ShowBox.IsChecked == true; _settings.HideFromCapture = CaptureBox.IsChecked == true;
             _settings.Party1Color = Party1ColorBox.Text; _settings.Party2Color = Party2ColorBox.Text;
@@ -304,6 +307,7 @@ public partial class MainWindow : Window
         OtherSizeBox.Text = _settings.OtherSize.ToString("0.00");
         MySizeBox.Text = _settings.MySize.ToString("0.00");
         TeamBoxSizeBox.Text = _settings.TeamBoxSize.ToString("0.00");
+        CurrentNumberFontSizeBox.Text = _settings.CurrentNumberFontSize.ToString("0");
         ScaleBox.Text = _settings.OverlayScale.ToString("0.00");
         OpacityBox.Text = _settings.OverlayOpacity.ToString("0.00");
         XBox.Text = _settings.OverlayX.ToString("0");

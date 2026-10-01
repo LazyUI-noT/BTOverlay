@@ -111,10 +111,26 @@ try
     board.Included[2] = false;
     board.Order = [0, 2, 3, 1, 4, 5, 6, 7];
     board.ResetTurn();
-    Check(board.Turn == 0, "turn resets to first displayed slot");
+    Check(board.Turn == 3, "turn reset skips empty and excluded players in host order");
     board.SetCount(0, 2);
     board.SetCount(0, 0);
-    Check(board.Turn == 3, "turn skips excluded slot in host order");
+    Check(board.Turn == 3, "non-current count changes do not move the turn");
+
+    var skipEmpty = new Board { Turn = 1 };
+    skipEmpty.Counts[1] = 1; skipEmpty.Counts[2] = 0; skipEmpty.Counts[3] = 0; skipEmpty.Counts[4] = 1;
+    skipEmpty.SetCount(1, 0);
+    Check(skipEmpty.Turn == 4, "last item skips consecutive empty players");
+
+    var wrapEmpty = new Board { Turn = 6 };
+    wrapEmpty.Counts[6] = 1; wrapEmpty.Counts[7] = 0; wrapEmpty.Counts[0] = 3;
+    wrapEmpty.SetCount(6, 0);
+    Check(wrapEmpty.Turn == 0, "last position wraps and skips empty player eight");
+
+    var skipHiddenAndEmpty = new Board { Turn = 1 };
+    skipHiddenAndEmpty.Counts[1] = 1; skipHiddenAndEmpty.Included[2] = false;
+    skipHiddenAndEmpty.Counts[3] = 0; skipHiddenAndEmpty.Counts[4] = 1;
+    skipHiddenAndEmpty.SetCount(1, 0);
+    Check(skipHiddenAndEmpty.Turn == 4, "last item skips hidden and empty players");
 
     var probe = new TcpListener(IPAddress.Loopback, 0);
     probe.Start(); var port = ((IPEndPoint)probe.LocalEndpoint).Port; probe.Stop();
