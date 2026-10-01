@@ -1,0 +1,55 @@
+<Window x:Class="BToverlay.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="BToverlay" Width="670" Height="770" MinWidth="610" MinHeight="580" Background="#111723" Foreground="White">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="18">
+      <TextBlock Text="BToverlay" FontSize="27" FontWeight="Bold" />
+      <TextBlock x:Name="StatusText" Text="연결되지 않음" Foreground="#9AB3C8" Margin="0,2,0,16" />
+      <GroupBox Header="세션" Foreground="White" Padding="10" Margin="0,0,0,12">
+        <StackPanel>
+          <WrapPanel Margin="0,0,0,7"><TextBlock Text="내 이름" Width="92" VerticalAlignment="Center"/><TextBox x:Name="NameBox" Width="145" Margin="0,0,14,0"/>
+            <TextBlock Text="호스트 주소" Width="93" VerticalAlignment="Center"/><TextBox x:Name="AddressBox" Width="150" /></WrapPanel>
+          <WrapPanel Margin="0,0,0,7"><TextBlock Text="TCP 포트" Width="92" VerticalAlignment="Center"/><TextBox x:Name="PortBox" Width="80" Margin="0,0,14,0"/>
+            <Button Content="호스트 시작" Click="HostClick" Margin="0,0,6,0"/><Button Content="나가기" Click="LeaveClick" /></WrapPanel>
+          <TextBlock Text="참가자가 접속할 수 있는 공인 IP 또는 도메인을 입력하세요. 인터넷에서 사용하려면 TCP 포트를 호스트 PC로 전달해야 합니다." TextWrapping="Wrap" Foreground="#9AB3C8" Margin="0,0,0,8"/>
+          <WrapPanel><TextBox x:Name="TokenBox" Width="420" MinHeight="27" ToolTip="초대 토큰을 붙여 넣으세요"/><Button Content="토큰으로 참가" Click="JoinClick" Margin="7,0,0,0" /></WrapPanel>
+        </StackPanel>
+      </GroupBox>
+      <GroupBox Header="참가자와 차례" Foreground="White" Padding="10" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Text="호스트는 시작 위치, 초대, 표시 여부, 순서, 내보내기를 정합니다. 표시 순서 1–4는 1파티, 5–8은 2파티입니다. 차례 초기화는 시작 위치로 돌아갑니다." TextWrapping="Wrap" Foreground="#9AB3C8" Margin="0,0,0,8"/>
+          <TextBlock Text="세션 초기화와 해당 단축키는 호스트만 사용할 수 있습니다." TextWrapping="Wrap" Foreground="#9AB3C8" Margin="0,0,0,8"/>
+          <StackPanel x:Name="PlayersPanel" />
+          <WrapPanel Margin="0,9,0,0"><Button Content="아이템 개수 초기화" Click="ResetCountsClick" Margin="0,0,7,0"/><Button Content="차례 초기화" Click="ResetTurnClick"/></WrapPanel>
+        </StackPanel>
+      </GroupBox>
+      <GroupBox Header="내 아이템과 오버레이" Foreground="White" Padding="10" Margin="0,0,0,12">
+        <StackPanel>
+          <WrapPanel Margin="0,0,0,7"><TextBlock Text="최대 아이템 개수" Width="110" VerticalAlignment="Center"/><TextBox x:Name="MaxBox" Width="55" Margin="0,0,7,0"/><Button Content="사용 −1" Click="SpendClick" Margin="0,0,7,0"/><Button Content="추가 +1" Click="AddClick"/></WrapPanel>
+          <WrapPanel Margin="0,0,0,7"><TextBlock Text="아이템 이미지" Width="110" VerticalAlignment="Center"/><TextBox x:Name="ImageBox" Width="365" Margin="0,0,7,0"/><Button Content="찾기" Click="BrowseClick"/></WrapPanel>
+          <WrapPanel Margin="0,0,0,7"><TextBlock Text="위치 X / Y" Width="110" VerticalAlignment="Center"/><TextBox x:Name="XBox" Width="62" Margin="0,0,5,0"/><TextBox x:Name="YBox" Width="62" Margin="0,0,15,0"/>
+            <TextBlock Text="크기" VerticalAlignment="Center" Margin="0,0,6,0"/><TextBox x:Name="ScaleBox" Width="55" Margin="0,0,15,0"/>
+            <TextBlock Text="불투명도" VerticalAlignment="Center" Margin="0,0,6,0"/><TextBox x:Name="OpacityBox" Width="55" /></WrapPanel>
+          <WrapPanel Margin="0,0,0,7"><CheckBox x:Name="ShowBox" Content="오버레이 표시" Margin="0,0,18,0"/><CheckBox x:Name="CaptureBox" Content="화면 공유·캡처에서 숨기기"/></WrapPanel>
+          <WrapPanel Margin="0,0,0,7"><TextBlock Text="1파티 상자 색" Width="110" VerticalAlignment="Center"/><TextBox x:Name="Party1ColorBox" Width="90" Margin="0,0,14,0"/>
+            <TextBlock Text="2파티 상자 색" Width="95" VerticalAlignment="Center"/><TextBox x:Name="Party2ColorBox" Width="90"/></WrapPanel>
+          <WrapPanel Margin="0,0,0,7"><TextBlock Text="현재 차례 테두리" Width="110" VerticalAlignment="Center"/><TextBox x:Name="CurrentOutlineBox" Width="90" Margin="0,0,14,0"/>
+            <TextBlock Text="내 테두리" Width="95" VerticalAlignment="Center"/><TextBox x:Name="MyOutlineBox" Width="90"/></WrapPanel>
+          <WrapPanel Margin="0,0,0,7"><TextBlock Text="배치" Width="110" VerticalAlignment="Center"/>
+            <ComboBox x:Name="StyleBox" Width="145" Margin="0,0,14,0"><ComboBoxItem Content="스타일 1: 아이콘"/><ComboBoxItem Content="스타일 2: 간단"/></ComboBox>
+            <CheckBox x:Name="GoldBox" Content="내 차례에 금빛" Margin="0,0,14,0"/>
+            <CheckBox x:Name="FlashBox" Content="금빛 깜빡임"/></WrapPanel>
+          <CheckBox x:Name="EnlargeCurrentBox" Content="현재 차례 이미지 확대" Margin="110,0,0,7"/>
+          <Button Content="표시·아이템 설정 적용" Click="ApplyClick" HorizontalAlignment="Left" />
+        </StackPanel>
+      </GroupBox>
+      <GroupBox Header="단축키" Foreground="White" Padding="10">
+        <StackPanel>
+          <TextBlock Text="예: Ctrl+Alt+F1 또는 숫자 2. 단일 키는 로스트아크 창이 앞에 있을 때만 감지하며 게임 입력을 막지 않습니다." TextWrapping="Wrap" Foreground="#9AB3C8" Margin="0,0,0,8"/>
+          <WrapPanel Margin="0,0,0,5"><TextBlock Text="사용 −1" Width="105"/><TextBox x:Name="SpendKeyBox" Width="140" Margin="0,0,18,0"/><TextBlock Text="추가 +1" Width="55"/><TextBox x:Name="AddKeyBox" Width="140"/></WrapPanel>
+          <WrapPanel Margin="0,0,0,5"><TextBlock Text="아이템 초기화" Width="105"/><TextBox x:Name="ResetCountsKeyBox" Width="140" Margin="0,0,18,0"/><TextBlock Text="차례 초기화" Width="55"/><TextBox x:Name="ResetTurnKeyBox" Width="140"/></WrapPanel>
+          <WrapPanel><TextBlock Text="표시/숨기기" Width="105"/><TextBox x:Name="ToggleKeyBox" Width="140"/><Button Content="단축키 적용" Click="HotkeysClick" Margin="18,0,0,0"/></WrapPanel>
+        </StackPanel>
+      </GroupBox>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
