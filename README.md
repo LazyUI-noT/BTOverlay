@@ -30,9 +30,6 @@
 
 ![단축키와 입력 대기 설정 화면](docs/images/settings_hotkeys.png)
 
-### 레이아웃 설명
-
-![오버레이 스타일과 파티, 현재 차례 표시 예시](reference/example%20UI.png)
 
 ## 실행과 빌드
 
