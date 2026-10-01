@@ -144,7 +144,7 @@
                   <TextBlock Text="내 이름" Width="90" VerticalAlignment="Center"/>
                   <TextBox x:Name="NameBox" Width="220" AutomationProperties.Name="내 이름"/>
                 </WrapPanel>
-                <Expander x:Name="HostConfigExpander" Header="호스트 연결 설정 (호스트만 열기)" IsExpanded="False" Margin="0,0,0,9">
+                <Expander x:Name="HostConfigExpander" Header="호스트만 연결 설정(내 IP 주소 구글 검색)" Foreground="White" IsExpanded="False" Margin="0,0,0,9">
                   <StackPanel Margin="8,8,8,4">
                     <WrapPanel Margin="0,0,0,8">
                       <TextBlock Text="초대 주소" Width="90" VerticalAlignment="Center"/>
