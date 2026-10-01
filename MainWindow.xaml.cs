@@ -4,6 +4,8 @@ using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace BToverlay;
 
@@ -35,6 +37,7 @@ public partial class MainWindow : Window
         SpendKeyBox.Text = _settings.SpendKey; AddKeyBox.Text = _settings.AddKey;
         ResetCountsKeyBox.Text = _settings.ResetCountsKey; ResetTurnKeyBox.Text = _settings.ResetTurnKey; ToggleKeyBox.Text = _settings.ToggleKey;
         EditKeyBox.Text = _settings.EditKey;
+        DelayBox.Text = _settings.InputDelaySeconds.ToString();
         _board.Changed += RenderPlayers;
         Loaded += (_, _) => { _overlay = new OverlayWindow(_board, _settings); _overlay.EditSettingsChanged += SyncSizeBoxes; _overlay.Show(); _hotkeys = new Hotkeys(); ApplyHotkeys(); RenderPlayers(); };
         Closing += (_, _) => { _settings.Save(); _hotkeys?.Dispose(); _ = _session?.DisposeAsync(); _overlay?.Close(); };
@@ -87,43 +90,60 @@ public partial class MainWindow : Window
     void RenderPlayers()
     {
         if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(RenderPlayers); return; }
+        var focusedTag = (Keyboard.FocusedElement as FrameworkElement)?.Tag as string;
+        Control? nextFocus = null;
         PlayersPanel.Children.Clear();
         for (var position = 0; position < 8; position++)
         {
             var slot = _board.Order[position];
+            void RememberFocus(Control control, string action)
+            {
+                var tag = $"{action}:{slot}";
+                control.Tag = tag;
+                if (tag == focusedTag && control.IsEnabled) nextFocus = control;
+            }
             var row = new WrapPanel { Margin = new Thickness(0, 2, 0, 2) };
             var markers = (slot == _board.StartSlot ? " 시작" : "") + (slot == _board.Turn ? " 현재" : "");
             row.Children.Add(new TextBlock { Text = $"{position + 1}. {_board.Names[slot]} [{_board.Counts[slot]}]{markers}", Width = 177,
-                VerticalAlignment = VerticalAlignment.Center, Foreground = slot == _board.Turn ? Brushes.Gold : Brushes.White });
+                VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis,
+                Foreground = slot == _board.Turn ? Brushes.Gold : Brushes.White });
             var enabled = new CheckBox { Content = "표시", Width = 55, IsChecked = _board.Included[slot], IsEnabled = _session?.IsHost == true };
+            RememberFocus(enabled, "included");
             enabled.Click += async (_, _) => { if (_session is not null) await _session.SetIncludedAsync(slot, enabled.IsChecked == true); };
             row.Children.Add(enabled);
             if (_session?.IsHost == true)
             {
                 var start = new Button { Content = "시작 지정", Width = 67, Margin = new Thickness(2, 0, 2, 0),
-                    IsEnabled = _board.Included[slot] };
+                    Padding = new Thickness(4, 5, 4, 5), IsEnabled = _board.Included[slot] };
+                RememberFocus(start, "start");
                 start.Click += async (_, _) => await _session.SetStartAsync(slot);
                 row.Children.Add(start);
             }
             if (_session?.IsHost == true && slot > 0)
             {
-                var invite = new Button { Content = "초대 복사", Width = 81, Margin = new Thickness(2, 0, 2, 0) };
+                var invite = new Button { Content = "초대 복사", Width = 81, Padding = new Thickness(4, 5, 4, 5), Margin = new Thickness(2, 0, 2, 0) };
+                RememberFocus(invite, "invite");
                 invite.Click += (_, _) => { try { Clipboard.SetText(_session.CreateInvite(slot)); Status($"참가자 {slot + 1}번의 초대 토큰을 복사했습니다. 개인적으로 전달하세요."); } catch (Exception ex) { Status(ex.Message); } };
                 row.Children.Add(invite);
-                var kick = new Button { Content = "내보내기", Width = 55, Margin = new Thickness(2, 0, 2, 0) };
+                var kick = new Button { Content = "내보내기", Width = 72, Padding = new Thickness(4, 5, 4, 5), Margin = new Thickness(2, 0, 2, 0) };
+                RememberFocus(kick, "kick");
                 kick.Click += async (_, _) => await _session.KickAsync(slot);
                 row.Children.Add(kick);
             }
             if (_session?.IsHost == true)
             {
-                var up = new Button { Content = "↑", Width = 26, Margin = new Thickness(2, 0, 2, 0) };
+                var up = new Button { Content = "↑", Width = 26, Padding = new Thickness(0), Margin = new Thickness(2, 0, 2, 0) };
+                RememberFocus(up, "up");
                 up.Click += async (_, _) => await _session.MoveAsync(slot, -1);
-                var down = new Button { Content = "↓", Width = 26, Margin = new Thickness(2, 0, 2, 0) };
+                var down = new Button { Content = "↓", Width = 26, Padding = new Thickness(0), Margin = new Thickness(2, 0, 2, 0) };
+                RememberFocus(down, "down");
                 down.Click += async (_, _) => await _session.MoveAsync(slot, 1);
                 row.Children.Add(up); row.Children.Add(down);
             }
             PlayersPanel.Children.Add(row);
         }
+        if (nextFocus is { } target)
+            Dispatcher.BeginInvoke(() => target.Focus(), DispatcherPriority.Input);
     }
     async void SpendClick(object sender, RoutedEventArgs e) => await ChangeCount(-1);
     async void AddClick(object sender, RoutedEventArgs e) => await ChangeCount(1);
@@ -134,7 +154,7 @@ public partial class MainWindow : Window
         var now = Stopwatch.GetTimestamp();
         if (_lastItemChangeTicks != 0)
         {
-            var wait = TimeSpan.FromSeconds(25) - Stopwatch.GetElapsedTime(_lastItemChangeTicks, now);
+            var wait = TimeSpan.FromSeconds(_settings.InputDelaySeconds) - Stopwatch.GetElapsedTime(_lastItemChangeTicks, now);
             if (wait > TimeSpan.Zero) { Status($"아이템 변경은 {Math.Ceiling(wait.TotalSeconds)}초 후 다시 사용할 수 있습니다."); return; }
         }
         _lastItemChangeTicks = now;
@@ -244,9 +264,12 @@ public partial class MainWindow : Window
     }
     void HotkeysClick(object sender, RoutedEventArgs e)
     {
+        if (!int.TryParse(DelayBox.Text, out var delay) || delay is < 0 or > 300)
+        { MessageBox.Show(this, "아이템 입력 대기 시간은 0~300초 사이로 입력하세요.", "단축키 설정 확인"); return; }
         _settings.SpendKey = SpendKeyBox.Text; _settings.AddKey = AddKeyBox.Text;
         _settings.ResetCountsKey = ResetCountsKeyBox.Text; _settings.ResetTurnKey = ResetTurnKeyBox.Text;
         _settings.ToggleKey = ToggleKeyBox.Text; _settings.EditKey = EditKeyBox.Text;
+        _settings.InputDelaySeconds = delay;
         _settings.Save(); ApplyHotkeys();
     }
     void ApplyHotkeys()

@@ -1,62 +1,306 @@
-<Window x:Class="BToverlay.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="BToverlay" Width="670" Height="770" MinWidth="610" MinHeight="580" Background="#111723" Foreground="White">
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="18">
-      <TextBlock Text="BToverlay" FontSize="27" FontWeight="Bold" />
-      <TextBlock x:Name="StatusText" Text="연결되지 않음" Foreground="#9AB3C8" Margin="0,2,0,16" />
-      <GroupBox Header="세션" Foreground="White" Padding="10" Margin="0,0,0,12">
-        <StackPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="내 이름" Width="92" VerticalAlignment="Center"/><TextBox x:Name="NameBox" Width="145" Margin="0,0,14,0"/>
-            <TextBlock Text="호스트 주소" Width="93" VerticalAlignment="Center"/><TextBox x:Name="AddressBox" Width="150" /></WrapPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="TCP 포트" Width="92" VerticalAlignment="Center"/><TextBox x:Name="PortBox" Width="80" Margin="0,0,14,0"/>
-            <Button Content="호스트 시작" Click="HostClick" Margin="0,0,6,0"/><Button Content="나가기" Click="LeaveClick" /></WrapPanel>
-          <TextBlock Text="참가자가 접속할 수 있는 공인 IP 또는 도메인을 입력하세요. 인터넷에서 사용하려면 TCP 포트를 호스트 PC로 전달해야 합니다." TextWrapping="Wrap" Foreground="#9AB3C8" Margin="0,0,0,8"/>
-          <WrapPanel><TextBox x:Name="TokenBox" Width="420" MinHeight="27" ToolTip="초대 토큰을 붙여 넣으세요"/><Button Content="토큰으로 참가" Click="JoinClick" Margin="7,0,0,0" /></WrapPanel>
-        </StackPanel>
-      </GroupBox>
-      <GroupBox Header="참가자와 차례" Foreground="White" Padding="10" Margin="0,0,0,12">
-        <StackPanel>
-          <TextBlock Text="호스트는 시작 위치, 초대, 표시 여부, 순서, 내보내기를 정합니다. 표시 순서 1–4는 1파티, 5–8은 2파티입니다. 차례 초기화는 시작 위치로 돌아갑니다." TextWrapping="Wrap" Foreground="#9AB3C8" Margin="0,0,0,8"/>
-          <TextBlock Text="세션 초기화와 해당 단축키는 호스트만 사용할 수 있습니다." TextWrapping="Wrap" Foreground="#9AB3C8" Margin="0,0,0,8"/>
-          <StackPanel x:Name="PlayersPanel" />
-          <WrapPanel Margin="0,9,0,0"><Button Content="아이템 개수 초기화" Click="ResetCountsClick" Margin="0,0,7,0"/><Button Content="차례 초기화" Click="ResetTurnClick"/></WrapPanel>
-        </StackPanel>
-      </GroupBox>
-      <GroupBox Header="내 아이템과 오버레이" Foreground="White" Padding="10" Margin="0,0,0,12">
-        <StackPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="최대 아이템 개수" Width="110" VerticalAlignment="Center"/><TextBox x:Name="MaxBox" Width="55" Margin="0,0,7,0"/><Button Content="사용 −1" Click="SpendClick" Margin="0,0,7,0"/><Button Content="추가 +1" Click="AddClick"/></WrapPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="아이템 이미지" Width="110" VerticalAlignment="Center"/><TextBox x:Name="ImageBox" Width="365" Margin="0,0,7,0"/><Button Content="찾기" Click="BrowseClick"/></WrapPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="위치 X / Y" Width="110" VerticalAlignment="Center"/><TextBox x:Name="XBox" Width="62" Margin="0,0,5,0"/><TextBox x:Name="YBox" Width="62" Margin="0,0,15,0"/>
-            <TextBlock Text="크기" VerticalAlignment="Center" Margin="0,0,6,0"/><TextBox x:Name="ScaleBox" Width="55" Margin="0,0,15,0"/>
-            <TextBlock Text="불투명도" VerticalAlignment="Center" Margin="0,0,6,0"/><TextBox x:Name="OpacityBox" Width="55" /></WrapPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="현재 차례 크기" Width="110" VerticalAlignment="Center"/><TextBox x:Name="CurrentSizeBox" Width="55" Margin="0,0,15,0"/>
-            <TextBlock Text="나머지 크기" Width="95" VerticalAlignment="Center"/><TextBox x:Name="OtherSizeBox" Width="55" Margin="0,0,15,0"/>
-            <TextBlock Text="내 표시 크기" Width="95" VerticalAlignment="Center"/><TextBox x:Name="MySizeBox" Width="55" /></WrapPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="파티 상자 크기" Width="110" VerticalAlignment="Center"/><TextBox x:Name="TeamBoxSizeBox" Width="55" Margin="0,0,14,0"/>
-            <TextBlock Text="편집 모드에서는 드래그·크기·불투명도를 화면에서 조절할 수 있습니다." Foreground="#9AB3C8" VerticalAlignment="Center"/></WrapPanel>
-          <CheckBox x:Name="CombineMySizeBox" Content="내 차례에 현재 차례 크기와 내 표시 크기를 함께 적용" Margin="110,0,0,7"/>
-          <WrapPanel Margin="0,0,0,7"><CheckBox x:Name="ShowBox" Content="오버레이 표시" Margin="0,0,18,0"/><CheckBox x:Name="CaptureBox" Content="화면 공유·캡처에서 숨기기"/></WrapPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="1파티 상자 색" Width="110" VerticalAlignment="Center"/><TextBox x:Name="Party1ColorBox" Width="90" Margin="0,0,4,0"/><Button Content="팔레트" Tag="Party1" Click="PickColorClick" Margin="0,0,12,0"/>
-            <TextBlock Text="2파티 상자 색" Width="95" VerticalAlignment="Center"/><TextBox x:Name="Party2ColorBox" Width="90" Margin="0,0,4,0"/><Button Content="팔레트" Tag="Party2" Click="PickColorClick"/></WrapPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="현재 차례 테두리" Width="110" VerticalAlignment="Center"/><TextBox x:Name="CurrentOutlineBox" Width="90" Margin="0,0,4,0"/><Button Content="팔레트" Tag="Current" Click="PickColorClick" Margin="0,0,12,0"/>
-            <TextBlock Text="내 테두리" Width="95" VerticalAlignment="Center"/><TextBox x:Name="MyOutlineBox" Width="90" Margin="0,0,4,0"/><Button Content="팔레트" Tag="My" Click="PickColorClick"/></WrapPanel>
-          <WrapPanel Margin="0,0,0,7"><TextBlock Text="배치" Width="110" VerticalAlignment="Center"/>
-            <ComboBox x:Name="StyleBox" Width="145" Margin="0,0,14,0"><ComboBoxItem Content="스타일 1: 아이콘"/><ComboBoxItem Content="스타일 2: 간단"/></ComboBox>
-            <CheckBox x:Name="GoldBox" Content="내 차례에 금빛" Margin="0,0,14,0"/>
-            <CheckBox x:Name="FlashBox" Content="금빛 깜빡임"/></WrapPanel>
-          <CheckBox x:Name="EnlargeCurrentBox" Content="현재 차례 이미지 확대" Margin="110,0,0,7"/>
-          <WrapPanel><Button Content="표시·아이템 설정 적용" Click="ApplyClick" Margin="0,0,8,0"/><Button x:Name="EditButton" Content="편집 모드 시작" Click="EditClick" /></WrapPanel>
-        </StackPanel>
-      </GroupBox>
-      <GroupBox Header="단축키" Foreground="White" Padding="10">
-        <StackPanel>
-          <TextBlock Text="예: Ctrl+Alt+F1 또는 숫자 2. 단일 키는 활성 창에 관계없이 감지하며 다른 프로그램의 키 입력을 막지 않습니다." TextWrapping="Wrap" Foreground="#9AB3C8" Margin="0,0,0,8"/>
-          <WrapPanel Margin="0,0,0,5"><TextBlock Text="사용 −1" Width="105"/><TextBox x:Name="SpendKeyBox" Width="140" Margin="0,0,18,0"/><TextBlock Text="추가 +1" Width="55"/><TextBox x:Name="AddKeyBox" Width="140"/></WrapPanel>
-          <WrapPanel Margin="0,0,0,5"><TextBlock Text="아이템 초기화" Width="105"/><TextBox x:Name="ResetCountsKeyBox" Width="140" Margin="0,0,18,0"/><TextBlock Text="차례 초기화" Width="55"/><TextBox x:Name="ResetTurnKeyBox" Width="140"/></WrapPanel>
-          <WrapPanel Margin="0,0,0,5"><TextBlock Text="표시/숨기기" Width="105"/><TextBox x:Name="ToggleKeyBox" Width="140" Margin="0,0,18,0"/><TextBlock Text="편집 모드" Width="55"/><TextBox x:Name="EditKeyBox" Width="140"/></WrapPanel>
-          <Button Content="단축키 적용" Click="HotkeysClick" HorizontalAlignment="Left" />
-        </StackPanel>
-      </GroupBox>
-    </StackPanel>
-  </ScrollViewer>
+<Window x:Class="BToverlay.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="BToverlay 설정" Width="790" Height="760" MinWidth="670" MinHeight="560"
+        Background="#101923" Foreground="#F3F7FB" FontFamily="Malgun Gothic" FontSize="13">
+  <Window.Resources>
+    <Style TargetType="TextBlock">
+      <Setter Property="Foreground" Value="#F3F7FB"/>
+    </Style>
+    <Style TargetType="TextBox">
+      <Setter Property="Foreground" Value="#F8FAFC"/>
+      <Setter Property="Background" Value="#1C2A3A"/>
+      <Setter Property="BorderBrush" Value="#60758A"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CaretBrush" Value="#F8FAFC"/>
+      <Setter Property="SelectionBrush" Value="#397AB9"/>
+      <Setter Property="Padding" Value="7,5"/>
+      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Style.Triggers>
+        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+          <Setter Property="BorderBrush" Value="#85C7FF"/>
+          <Setter Property="BorderThickness" Value="2"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <Style TargetType="Button">
+      <Setter Property="Foreground" Value="#F8FAFC"/>
+      <Setter Property="Background" Value="#263B50"/>
+      <Setter Property="BorderBrush" Value="#60758A"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Chrome" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="5" Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                RecognizesAccessKey="True"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#35536F"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#184A73"/>
+              </Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="Chrome" Property="BorderBrush" Value="#85C7FF"/>
+                <Setter TargetName="Chrome" Property="BorderThickness" Value="2"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.48"/>
+                <Setter Property="Cursor" Value="Arrow"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style TargetType="CheckBox">
+      <Setter Property="Foreground" Value="#F3F7FB"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="MinHeight" Value="30"/>
+    </Style>
+    <Style TargetType="ComboBox">
+      <Setter Property="Foreground" Value="#142333"/>
+      <Setter Property="Background" Value="#EAF1F7"/>
+      <Setter Property="BorderBrush" Value="#60758A"/>
+      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="Padding" Value="5,3"/>
+    </Style>
+    <Style TargetType="ComboBoxItem">
+      <Setter Property="Foreground" Value="#F8FAFC"/>
+      <Setter Property="Background" Value="#1C2A3A"/>
+      <Setter Property="Padding" Value="8,5"/>
+      <Style.Triggers>
+        <Trigger Property="IsHighlighted" Value="True">
+          <Setter Property="Background" Value="#35536F"/>
+        </Trigger>
+        <Trigger Property="IsSelected" Value="True">
+          <Setter Property="Background" Value="#27699D"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <Style TargetType="GroupBox">
+      <Setter Property="Foreground" Value="#E7F2FB"/>
+      <Setter Property="Background" Value="#172534"/>
+      <Setter Property="BorderBrush" Value="#3A5065"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="16,12"/>
+      <Setter Property="Margin" Value="0,0,0,16"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style TargetType="TabItem">
+      <Setter Property="Foreground" Value="#D8E7F4"/>
+      <Setter Property="Background" Value="#233548"/>
+      <Setter Property="BorderBrush" Value="#486178"/>
+      <Setter Property="Padding" Value="18,9"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TabItem">
+            <Border x:Name="TabChrome" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1,1,1,0"
+                    CornerRadius="5,5,0,0" Margin="0,0,4,0" Padding="{TemplateBinding Padding}">
+              <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="TabChrome" Property="Background" Value="#286CA3"/>
+                <Setter Property="Foreground" Value="White"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="TabChrome" Property="BorderBrush" Value="#85C7FF"/>
+              </Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="TabChrome" Property="BorderBrush" Value="#85C7FF"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Background="#172534" BorderBrush="#30485E" BorderThickness="0,0,0,1" Padding="22,15">
+      <StackPanel>
+        <TextBlock Text="BToverlay" FontSize="23" FontWeight="Bold"/>
+        <TextBlock x:Name="StatusText" Text="연결되지 않음" Foreground="#B9D6F0" TextWrapping="Wrap" Margin="0,4,0,0"/>
+      </StackPanel>
+    </Border>
+    <TabControl Margin="18,15,18,18" Background="#101923" BorderBrush="#3A5065">
+      <TabItem Header="세션과 참가자">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="2,16,10,0">
+          <StackPanel>
+            <GroupBox Header="연결">
+              <StackPanel>
+                <TextBlock Text="이름과 호스트 주소" Foreground="#B9D6F0" Margin="0,0,0,8"/>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="내 이름" Width="90" VerticalAlignment="Center"/>
+                  <TextBox x:Name="NameBox" Width="150" AutomationProperties.Name="내 이름" Margin="0,0,20,0"/>
+                  <TextBlock Text="호스트 주소" Width="90" VerticalAlignment="Center"/>
+                  <TextBox x:Name="AddressBox" Width="210" AutomationProperties.Name="호스트 주소"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="TCP 포트" Width="90" VerticalAlignment="Center"/>
+                  <TextBox x:Name="PortBox" Width="84" AutomationProperties.Name="TCP 포트" Margin="0,0,20,0"/>
+                  <Button Content="호스트 시작" Click="HostClick" Background="#24699E" Margin="0,0,8,0"/>
+                  <Button Content="나가기" Click="LeaveClick"/>
+                </WrapPanel>
+                <TextBlock Text="인터넷에서 참가하려면 접속 가능한 공인 IP 또는 도메인을 입력하고, 선택한 TCP 포트를 호스트 PC로 전달하세요."
+                           Foreground="#B9D6F0" TextWrapping="Wrap" Margin="0,2,0,12"/>
+                <TextBlock Text="초대 토큰으로 참가" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <WrapPanel>
+                  <TextBox x:Name="TokenBox" Width="390" AutomationProperties.Name="초대 토큰" ToolTip="초대 토큰을 붙여 넣으세요" Margin="0,0,8,0"/>
+                  <Button Content="토큰으로 참가" Click="JoinClick" Background="#24699E"/>
+                </WrapPanel>
+              </StackPanel>
+            </GroupBox>
+            <GroupBox Header="참가자와 차례">
+              <StackPanel>
+                <TextBlock Text="호스트는 표시 순서, 시작 위치, 표시 여부, 초대와 내보내기를 관리합니다. 1~4번은 1파티, 5~8번은 2파티입니다."
+                           Foreground="#B9D6F0" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                <StackPanel x:Name="PlayersPanel"/>
+                <WrapPanel Margin="0,12,0,0">
+                  <Button Content="아이템 개수 초기화" Click="ResetCountsClick" Margin="0,0,8,0"/>
+                  <Button Content="차례 초기화" Click="ResetTurnClick"/>
+                </WrapPanel>
+                <TextBlock Text="초기화는 호스트만 실행할 수 있습니다." Foreground="#B9D6F0" Margin="0,8,0,0"/>
+              </StackPanel>
+            </GroupBox>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="오버레이">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="2,16,10,0">
+          <StackPanel>
+            <GroupBox Header="아이템">
+              <StackPanel>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="최대 아이템 개수" Width="125" VerticalAlignment="Center"/>
+                  <TextBox x:Name="MaxBox" Width="60" AutomationProperties.Name="최대 아이템 개수" Margin="0,0,12,0"/>
+                  <Button Content="사용 −1" Click="SpendClick" Margin="0,0,8,0"/>
+                  <Button Content="추가 +1" Click="AddClick"/>
+                </WrapPanel>
+                <WrapPanel>
+                  <TextBlock Text="아이템 이미지" Width="125" VerticalAlignment="Center"/>
+                  <TextBox x:Name="ImageBox" Width="340" AutomationProperties.Name="아이템 이미지 파일" Margin="0,0,8,0"/>
+                  <Button Content="찾기" Click="BrowseClick"/>
+                </WrapPanel>
+              </StackPanel>
+            </GroupBox>
+            <GroupBox Header="위치와 크기">
+              <StackPanel>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="위치 X / Y" Width="125" VerticalAlignment="Center"/>
+                  <TextBox x:Name="XBox" Width="67" AutomationProperties.Name="오버레이 X 위치" Margin="0,0,6,0"/>
+                  <TextBox x:Name="YBox" Width="67" AutomationProperties.Name="오버레이 Y 위치" Margin="0,0,18,0"/>
+                  <TextBlock Text="전체 크기" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                  <TextBox x:Name="ScaleBox" Width="65" AutomationProperties.Name="전체 크기" Margin="0,0,18,0"/>
+                  <TextBlock Text="불투명도" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                  <TextBox x:Name="OpacityBox" Width="65" AutomationProperties.Name="불투명도"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="현재 차례 크기" Width="125" VerticalAlignment="Center"/>
+                  <TextBox x:Name="CurrentSizeBox" Width="65" AutomationProperties.Name="현재 차례 크기" Margin="0,0,18,0"/>
+                  <TextBlock Text="나머지 크기" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                  <TextBox x:Name="OtherSizeBox" Width="65" AutomationProperties.Name="나머지 크기" Margin="0,0,18,0"/>
+                  <TextBlock Text="내 표시 크기" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                  <TextBox x:Name="MySizeBox" Width="65" AutomationProperties.Name="내 표시 크기"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,7">
+                  <TextBlock Text="파티 상자 크기" Width="125" VerticalAlignment="Center"/>
+                  <TextBox x:Name="TeamBoxSizeBox" Width="65" AutomationProperties.Name="파티 상자 크기"/>
+                </WrapPanel>
+                <CheckBox x:Name="CombineMySizeBox" Content="내 차례에 현재 차례 크기와 내 표시 크기를 함께 적용" Margin="0,0,0,7"/>
+                <TextBlock Text="편집 모드에서는 오버레이를 끌어 이동하고, 크기와 불투명도를 화면에서 조절할 수 있습니다."
+                           Foreground="#B9D6F0" TextWrapping="Wrap"/>
+              </StackPanel>
+            </GroupBox>
+            <GroupBox Header="색상과 표시">
+              <StackPanel>
+                <WrapPanel Margin="0,0,0,9">
+                  <CheckBox x:Name="ShowBox" Content="오버레이 표시" Margin="0,0,22,0"/>
+                  <CheckBox x:Name="CaptureBox" Content="화면 공유·캡처에서 숨기기"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="1파티 상자 색" Width="105" VerticalAlignment="Center"/>
+                  <TextBox x:Name="Party1ColorBox" Width="90" AutomationProperties.Name="1파티 상자 색" Margin="0,0,6,0"/>
+                  <Button Content="팔레트" Tag="Party1" Click="PickColorClick" Margin="0,0,12,0"/>
+                  <TextBlock Text="2파티 상자 색" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                  <TextBox x:Name="Party2ColorBox" Width="90" AutomationProperties.Name="2파티 상자 색" Margin="0,0,6,0"/>
+                  <Button Content="팔레트" Tag="Party2" Click="PickColorClick"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="현재 차례 테두리" Width="105" VerticalAlignment="Center"/>
+                  <TextBox x:Name="CurrentOutlineBox" Width="90" AutomationProperties.Name="현재 차례 테두리 색" Margin="0,0,6,0"/>
+                  <Button Content="팔레트" Tag="Current" Click="PickColorClick" Margin="0,0,12,0"/>
+                  <TextBlock Text="내 테두리" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                  <TextBox x:Name="MyOutlineBox" Width="90" AutomationProperties.Name="내 테두리 색" Margin="0,0,6,0"/>
+                  <Button Content="팔레트" Tag="My" Click="PickColorClick"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,7">
+                  <TextBlock Text="표시 방식" Width="125" VerticalAlignment="Center"/>
+                  <ComboBox x:Name="StyleBox" Width="160" AutomationProperties.Name="표시 방식" Margin="0,0,20,0">
+                    <ComboBoxItem Content="스타일 1: 아이콘"/>
+                    <ComboBoxItem Content="스타일 2: 간단"/>
+                  </ComboBox>
+                  <CheckBox x:Name="GoldBox" Content="내 차례에 금빛" Margin="0,0,17,0"/>
+                  <CheckBox x:Name="FlashBox" Content="금빛 깜빡임"/>
+                </WrapPanel>
+                <CheckBox x:Name="EnlargeCurrentBox" Content="현재 차례 이미지 확대"/>
+              </StackPanel>
+            </GroupBox>
+            <WrapPanel Margin="0,0,0,8">
+              <Button Content="표시·아이템 설정 적용" Click="ApplyClick" Background="#24699E" Margin="0,0,8,0"/>
+              <Button x:Name="EditButton" Content="편집 모드 시작" Click="EditClick"/>
+            </WrapPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="단축키">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="2,16,10,0">
+          <StackPanel>
+            <GroupBox Header="키 설정">
+              <StackPanel>
+                <TextBlock Text="예: Ctrl+Alt+F1 또는 숫자 2. 단일 키는 활성 창에 관계없이 감지되며 다른 프로그램의 입력을 막지 않습니다."
+                           Foreground="#B9D6F0" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="사용 −1" Width="95" VerticalAlignment="Center"/>
+                  <TextBox x:Name="SpendKeyBox" Width="140" AutomationProperties.Name="사용 단축키" Margin="0,0,20,0"/>
+                  <TextBlock Text="추가 +1" Width="95" VerticalAlignment="Center"/>
+                  <TextBox x:Name="AddKeyBox" Width="140" AutomationProperties.Name="추가 단축키"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,9">
+                  <TextBlock Text="아이템 초기화" Width="95" VerticalAlignment="Center"/>
+                  <TextBox x:Name="ResetCountsKeyBox" Width="140" AutomationProperties.Name="아이템 초기화 단축키" Margin="0,0,20,0"/>
+                  <TextBlock Text="차례 초기화" Width="95" VerticalAlignment="Center"/>
+                  <TextBox x:Name="ResetTurnKeyBox" Width="140" AutomationProperties.Name="차례 초기화 단축키"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,14">
+                  <TextBlock Text="표시/숨기기" Width="95" VerticalAlignment="Center"/>
+                  <TextBox x:Name="ToggleKeyBox" Width="140" AutomationProperties.Name="표시 숨기기 단축키" Margin="0,0,20,0"/>
+                  <TextBlock Text="편집 모드" Width="95" VerticalAlignment="Center"/>
+                  <TextBox x:Name="EditKeyBox" Width="140" AutomationProperties.Name="편집 모드 단축키"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,14">
+                  <TextBlock Text="아이템 입력 대기" Width="95" VerticalAlignment="Center"/>
+                  <TextBox x:Name="DelayBox" Width="75" AutomationProperties.Name="아이템 입력 대기 초" Margin="0,0,8,0"/>
+                  <TextBlock Text="초 (0~300, 기본 25초)" Foreground="#B9D6F0" VerticalAlignment="Center"/>
+                </WrapPanel>
+                <Button Content="단축키 적용" Click="HotkeysClick" Background="#24699E" HorizontalAlignment="Left"/>
+              </StackPanel>
+            </GroupBox>
+            <TextBlock Text="아이템 사용과 추가에는 위에서 정한 대기 시간이 적용됩니다. 표시와 편집 단축키는 바로 사용할 수 있습니다."
+                       Foreground="#B9D6F0" TextWrapping="Wrap" Margin="3,0,3,0"/>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
 </Window>

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Automation;
 using System.Windows.Media;
 
 namespace BToverlay;
@@ -46,6 +47,7 @@ internal sealed class ColorPaletteWindow : Window
                 Height = 30,
                 ToolTip = hex
             };
+            AutomationProperties.SetName(button, $"색상 {hex}");
             button.Click += (_, _) => { SelectedHex = hex; DialogResult = true; };
             swatches.Children.Add(button);
         }
@@ -53,12 +55,15 @@ internal sealed class ColorPaletteWindow : Window
 
         var custom = new WrapPanel { Margin = new Thickness(0, 12, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         custom.Children.Add(new TextBlock { Text = "색상 코드", Width = 72, VerticalAlignment = VerticalAlignment.Center });
-        _hexBox = new TextBox { Text = initial, Width = 112, VerticalContentAlignment = VerticalAlignment.Center };
+        _hexBox = new TextBox { Text = initial, Width = 112, VerticalContentAlignment = VerticalAlignment.Center,
+            Foreground = Brushes.White, Background = new SolidColorBrush(Color.FromRgb(28, 42, 58)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(96, 117, 138)), CaretBrush = Brushes.White };
         custom.Children.Add(_hexBox);
         _preview = new Border { Width = 28, Height = 25, BorderBrush = Brushes.White, BorderThickness = new Thickness(1), Margin = new Thickness(8, 0, 0, 0) };
         custom.Children.Add(_preview);
         _hexBox.TextChanged += (_, _) => UpdatePreview();
-        var apply = new Button { Content = "선택", Width = 62, Margin = new Thickness(15, 0, 0, 0) };
+        var apply = new Button { Content = "선택", Width = 62, Margin = new Thickness(15, 0, 0, 0),
+            Foreground = Brushes.White, Background = new SolidColorBrush(Color.FromRgb(36, 105, 158)) };
         apply.Click += (_, _) =>
         {
             try

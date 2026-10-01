@@ -70,6 +70,22 @@ static void Preview(int style)
     using var file = File.Create(path); encoder.Save(file);
     window.Close();
 }
+static void PreviewSettings(string filename, int selectedTab)
+{
+    var window = new MainWindow();
+    var content = (FrameworkElement)window.Content;
+    ((TabControl)((DockPanel)content).Children[1]).SelectedIndex = selectedTab;
+    content.Measure(new Size(670, 770));
+    content.Arrange(new Rect(0, 0, 670, 770));
+    content.UpdateLayout();
+    var image = new RenderTargetBitmap(670, 770, 96, 96, PixelFormats.Pbgra32);
+    image.Render(content);
+    var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
+    var path = Path.Combine(Environment.CurrentDirectory, "bin", filename);
+    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+    using var file = File.Create(path); encoder.Save(file);
+    window.Close();
+}
 
 Session? host = null;
 Session? guest = null;
@@ -144,6 +160,7 @@ try
     catch (Exception) { }
     Check(!reused, "used invite cannot reconnect after kick");
     await dispatcher.InvokeAsync(() => { Preview(1); Preview(2); });
+    await dispatcher.InvokeAsync(() => { PreviewSettings("settings_session.png", 0); PreviewSettings("settings_overlay.png", 1); PreviewSettings("settings_hotkeys.png", 2); });
     Console.WriteLine("PASS: turn order, join, off-turn spend marker, add sync, order, visibility, reset, kick, invite revocation");
 }
 finally

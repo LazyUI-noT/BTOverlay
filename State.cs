@@ -8,6 +8,7 @@ public sealed class UserSettings
     public string HostAddress { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 47801;
     public int MaxItems { get; set; } = 3;
+    public int InputDelaySeconds { get; set; } = 25;
     public string ItemImage { get; set; } = "";
     public double OverlayX { get; set; } = 80;
     public double OverlayY { get; set; } = 80;

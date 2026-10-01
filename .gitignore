@@ -4,4 +4,5 @@ Data/
 Checks/bin/
 Checks/obj/
 publish/
+dist/
 *.zip
